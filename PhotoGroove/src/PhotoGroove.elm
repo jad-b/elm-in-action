@@ -21,6 +21,12 @@ type ThumbnailSize
     | Large
 
 
+type Msg
+    = ClickedPhoto String
+    | ClickedSize ThumbnailSize
+    | ClickedSurpriseMe
+
+
 type alias Photo =
     { url : String }
 
@@ -30,10 +36,6 @@ type alias Model =
     , selectedUrl : String
     , chosenSize : ThumbnailSize
     }
-
-
-type alias Msg =
-    { description : String, data : String }
 
 
 initialModel : Model
@@ -58,7 +60,7 @@ view model =
     div [ class "content" ]
         [ h1 [] [ text "Photo Groove" ]
         , button
-            [ onClick { description = "ClickedSurpriseMe", data = "" } ]
+            [ onClick ClickedSurpriseMe ]
             [ text "Surprise Me!" ]
         , h3 [] [ text "Thumbnail Size:" ]
         , div [ id "choose-size" ]
@@ -78,7 +80,7 @@ viewThumbnail selectedUrl thumb =
     img
         [ src (urlPrefix ++ thumb.url)
         , classList [ ( "selected", selectedUrl == thumb.url ) ]
-        , onClick { description = "ClickedPhoto", data = thumb.url }
+        , onClick ClickedPhoto thumb.url
         ]
         []
 
@@ -86,7 +88,7 @@ viewThumbnail selectedUrl thumb =
 viewSizeChooser : ThumbnailSize -> Html Msg
 viewSizeChooser size =
     label []
-        [ input [ type_ "radio", name "size" ] []
+        [ input [ type_ "radio", name "size" onClick (ClickedSize size) ] []
         , text (sizeToString size)
         ]
 
@@ -104,16 +106,27 @@ sizeToString size =
             "small"
 
 
+getPhotoUrl : Int -> String
+getPhotoUrl index =
+    case Array.get index photoArray of
+        Just photo ->
+            photo.url
+
+        Nothing ->
+            ""
+
+
+update : Msg -> Model -> Model
 update msg model =
-    case msg.description of
-        "ClickedPhoto" ->
-            { model | selectedUrl = msg.data }
+    case msg of
+        ClickedPhoto url ->
+            { model | selectedUrl = url }
 
-        "ClickedSurpriseMe" ->
+        ClickedSize size ->
+            { model | chosenSize = size }
+
+        ClickedSurpriseMe ->
             { model | selectedUrl = "2.jpeg" }
-
-        _ ->
-            model
 
 
 main =
