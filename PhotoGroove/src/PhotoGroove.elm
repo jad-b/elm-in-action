@@ -1,9 +1,5 @@
--- Next: 3.2.3
-
-
 module PhotoGroove exposing (main)
 
-import Array exposing (Array)
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -26,7 +22,7 @@ type Msg
     = ClickedPhoto String
     | ClickedSize ThumbnailSize
     | ClickedSurpriseMe
-    | GotSelectedIndex Int
+    | GotRandomPhoto Photo
 
 
 type alias Photo =
@@ -50,21 +46,6 @@ initialModel =
     { status = Loading
     , chosenSize = Large
     }
-
-
-randomPhotoPicker : Random.Generator Int
-randomPhotoPicker =
-    Random.int 0 (Array.length photoArray - 1)
-
-
-photoArray : Array Photo
-photoArray =
-    case initialModel of
-        Loaded photos _ ->
-            Array.fromList photos
-
-        _ ->
-            Array.fromList []
 
 
 view : Model -> Html Msg
@@ -132,32 +113,48 @@ sizeToString size =
             "small"
 
 
-getPhotoUrl : Int -> String
-getPhotoUrl index =
-    case Array.get index photoArray of
-        Just photo ->
-            photo.url
+selectUrl : String -> Status -> Status
+selectUrl url status = 
+    case status of 
+        Loaded photos _ ->
+            Loaded photos url
 
-        Nothing ->
-            ""
+        Loading ->
+            status
+
+        Errored errorMessage ->
+            status
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        GotRandomPhoto photo ->
+            ( { model | status = selectUrl photo.url model.status }
+            , Cmd.none )
+
         ClickedPhoto url ->
-            ( { model | selectedUrl = url }, Cmd.none )
+            ( { model | status = selectUrl url model.status }
+            , Cmd.none )
 
         ClickedSize size ->
             ( { model | chosenSize = size }, Cmd.none )
 
         ClickedSurpriseMe ->
-            ( { model | selectedUrl = "2.jpeg" }
-            , Random.generate GotSelectedIndex randomPhotoPicker
-            )
+            case model.status of
+                Loaded (firstPhoto :: otherPhotos) _ -> 
+                    Random.uniform firstPhoto otherPhotos
+                        |> Random.generate GotRandomPhoto
+                        |> Tuple.pair model
 
-        GotSelectedIndex index ->
-            ( { model | selectedUrl = getPhotoUrl index }, Cmd.none )
+                Loaded [] _ ->
+                    ( model, Cmd.none )
+
+                Loading ->
+                    ( model, Cmd.none )
+            
+                Errored errorMessage ->
+                    ( model, Cmd.none )
 
 main : Program () Model Msg
 main =
