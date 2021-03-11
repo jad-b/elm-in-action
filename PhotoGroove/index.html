@@ -5,6 +5,13 @@
             connectedCallback() {
                 var input = document.createElement("input");
                 this.appendChild(input);
+
+                var jsr = new JSR(input, {
+                    max: this.max,
+                    values: [this.val],
+                    sliders: 1,
+                    grid: false
+                })
             }
         }
 
@@ -12,6 +19,8 @@
     </script>
     <head>
         <link rel="stylesheet" href="http://elm-in-action.com/styles.css">
+        <link rel="stylesheet" href="http://elm-in-action.com/range-slider.css">
+        <script src="http://elm-in-action.com/range-slider.js"></script>
     </head>
     <body>
         <div id="app"></div>

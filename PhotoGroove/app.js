@@ -6683,7 +6683,7 @@ var $author$project$PhotoGroove$viewFilter = F2(
 					$author$project$PhotoGroove$rangeSlider,
 					_List_fromArray(
 						[
-							$elm$html$Html$Attributes$max('l1'),
+							$elm$html$Html$Attributes$max('11'),
 							A2(
 							$elm$html$Html$Attributes$property,
 							'val',

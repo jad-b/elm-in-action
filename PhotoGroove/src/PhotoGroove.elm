@@ -44,7 +44,7 @@ viewFilter name magnitude =
     div [ class "filter-slider" ]
         [ label [] [ text name ]
         , rangeSlider   
-            [ Attr.max "l1"
+            [ Attr.max "11"
             , Attr.property "val" (Encode.int magnitude)
             ]
             []
