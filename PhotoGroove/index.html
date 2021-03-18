@@ -2,15 +2,31 @@
 <html>
     <script>
         class RangeSlider extends HTMLElement {
+            // Invoked whenever a <range-slider> is added to the DOM
             connectedCallback() {
+                // Create an input element
                 var input = document.createElement("input");
+                // Add it as a child
                 this.appendChild(input);
-
+                // Instantiate the JSR object
+                // 'this.*' are properties set within Elm
                 var jsr = new JSR(input, {
                     max: this.max,
                     values: [this.val],
                     sliders: 1,
                     grid: false
+                })
+                // Save 'this' for referencing inside our function
+                // jdb - I think 'this' will become the JSR object?
+                var rangeSliderNode = this;
+                // Convert JSR's custom event into one thrown by the 
+                // <range-slider> element
+                jsr.addEventListener("update", function(elem, value) {
+                    var event = new CustomEvent("slide", {
+                        detail: {userSlidTo: value}
+                    });
+                    // Send event from our custom element
+                    rangeSliderNode.dispatchEvent(event);
                 })
             }
         }
