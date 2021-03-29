@@ -14,7 +14,7 @@ import Html.Attributes as Attr
         )
 import Html.Events exposing (on, onClick)
 import Http
-import Json.Decode exposing (Decoder, at, int, list, string, succeed)
+import Json.Decode as Decode
 import Json.Decode.Pipeline exposing (optional, required)
 import Json.Encode as Encode
 import Random
@@ -34,6 +34,8 @@ type Msg
     | SlidHue Int
     | SlidRipple Int
     | SlidNoise Int
+    | GotActivity String
+    | Damn String
 
 
 view : Model -> Html Msg
@@ -70,6 +72,8 @@ viewLoaded photos selectedUrl model =
     , button
         [ onClick ClickedSurpriseMe ]
         [ text "Surprise Me!" ]
+    , div [ class "activity" ]
+        [ text model.activity ]
     , div [ class "filters" ]
         [ viewFilter SlidHue "Hue" model.hue
         , viewFilter SlidRipple "Ripple" model.ripple
@@ -124,7 +128,25 @@ type ThumbnailSize
     | Large
 
 
+
+-- Command port
+-- Given a set of arguments, produce a Cmd for the Elm runtime to execute
+-- The lack of a 'msg' parameter indicates no data will be returned, as there's
+-- not enough information in the type signature to know what it could be
+
+
 port setFilters : FilterOptions -> Cmd msg
+
+
+
+-- Subscription port
+-- Given a transform, return the results of applying the transform to the JS
+-- event in a Sub.
+-- Unlike the `setFilters` command port above, this time `msg` implies non-empty
+-- data will be returned, as we know the type from the transform we provide.
+
+
+port activityChanges : (Decode.Value -> msg) -> Sub msg
 
 
 type alias FilterOptions =
@@ -140,12 +162,12 @@ type alias Photo =
     }
 
 
-photoDecoder : Decoder Photo
+photoDecoder : Decode.Decoder Photo
 photoDecoder =
-    succeed Photo
-        |> Json.Decode.Pipeline.required "url" string
-        |> Json.Decode.Pipeline.required "size" int
-        |> optional "title" string "(untitled)"
+    Decode.succeed Photo
+        |> Json.Decode.Pipeline.required "url" Decode.string
+        |> Json.Decode.Pipeline.required "size" Decode.int
+        |> optional "title" Decode.string "(untitled)"
 
 
 type Status
@@ -160,6 +182,7 @@ type alias Model =
     , hue : Int
     , ripple : Int
     , noise : Int
+    , activity : String
     }
 
 
@@ -170,6 +193,7 @@ initialModel =
     , hue = 5
     , ripple = 5
     , noise = 5
+    , activity = ""
     }
 
 
@@ -204,9 +228,16 @@ update msg model =
         GotPhotos (Ok photos) ->
             case photos of
                 x :: xs ->
-                    ( { model | status = Loaded photos x.url }
-                    , Cmd.none
-                    )
+                    applyFilters
+                        { model
+                            | status =
+                                case List.head photos of
+                                    Just photo ->
+                                        Loaded photos photo.url
+
+                                    Nothing ->
+                                        Loaded [] ""
+                        }
 
                 [] ->
                     ( { model | status = Errored "0 photos found!" }, Cmd.none )
@@ -221,7 +252,15 @@ update msg model =
             applyFilters { model | ripple = ripple }
 
         SlidNoise noise ->
-            applyFilters { model | noise = noise }        
+            applyFilters { model | noise = noise }
+
+        GotActivity activity ->
+            ( { model | activity = activity }
+            , Cmd.none
+            )
+
+        Damn errMsg ->
+            ( { model | status = Errored "Server Error!" }, Cmd.none )
 
 
 applyFilters : Model -> ( Model, Cmd Msg )
@@ -231,14 +270,14 @@ applyFilters model =
             let
                 filters =
                     [ { name = "Hue", amount = toFloat model.hue / 11 }
-                    , { name = "Ripple", amount = toFloat model.ripple  / 11 }
-                    , { name = "Noise", amount = toFloat model.noise  / 11 }
+                    , { name = "Ripple", amount = toFloat model.ripple / 11 }
+                    , { name = "Noise", amount = toFloat model.noise / 11 }
                     ]
 
                 url =
                     urlPrefix ++ "large/" ++ selectedUrl
             in
-                ( model, setFilters { url = url, filters = filters } )
+            ( model, setFilters { url = url, filters = filters } )
 
         Loading ->
             ( model, Cmd.none )
@@ -264,18 +303,55 @@ initialCmd : Cmd Msg
 initialCmd =
     Http.get
         { url = "http://elm-in-action.com/photos/list.json"
-        , expect = Http.expectJson GotPhotos (Json.Decode.list photoDecoder)
+        , expect = Http.expectJson GotPhotos (Decode.list photoDecoder)
         }
 
 
-main : Program () Model Msg
+main : Program Decode.Value Model Msg
 main =
     Browser.element
-        { init = \_ -> ( initialModel, initialCmd )
+        { init = init
         , view = view
         , update = update
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = subscriptions
         }
+
+
+init : Decode.Value -> ( Model, Cmd Msg )
+init flags =
+    let
+        activity =
+            case Decode.decodeValue Decode.float flags of
+                Ok float ->
+                    "Initializing Pasta v" ++ String.fromFloat float
+
+                Err _ ->
+                    "Error retrieving Pasta version. Oh well."
+    in
+    ( { initialModel | activity = activity }, initialCmd )
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    let
+        -- : Decoder Msg
+        msgDecoder =
+            Decode.map GotActivity Decode.string
+
+        -- : Decode.Value -> Result Error Msg
+        tryDecode =
+            Decode.decodeValue msgDecoder
+
+        -- : Result Decode.Error Msg -> Msg
+        toMsg res =
+            case res of
+                Ok msg ->
+                    msg
+
+                Err decodeError ->
+                    Damn <| Decode.errorToString decodeError
+    in
+    activityChanges <| tryDecode >> toMsg
 
 
 rangeSlider : List (Attribute msg) -> List (Html msg) -> Html msg
@@ -285,6 +361,6 @@ rangeSlider attributes children =
 
 onSlide : (Int -> msg) -> Attribute msg
 onSlide toMsg =
-    at [ "detail", "userSlidTo" ] int
-        |> Json.Decode.map toMsg
+    Decode.at [ "detail", "userSlidTo" ] Decode.int
+        |> Decode.map toMsg
         |> on "slide"

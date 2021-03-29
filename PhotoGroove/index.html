@@ -44,11 +44,24 @@
         <script src="http://elm-in-action.com/pasta.js"></script>
         <script src="app.js"></script>
         <script>
-            var app = Elm.PhotoGroove.init({node: document.getElementById("app")});
+            var app = Elm.PhotoGroove.init({
+                node: document.getElementById("app"),
+                flags: Pasta.version
+            });
 
             // Set the callback when 'port setFilters' is invoked
             app.ports.setFilters.subscribe(function(options) {
-                Pasta.apply(document.getElementById("main-canvas"), options);
+                // Wrapping in requestAnimationFrame triggers the Pasta call
+                // right after Elm executes a DOM update 
+                requestAnimationFrame(function() {
+                    Pasta.apply(document.getElementById("main-canvas"), options);
+                })
+            });
+
+            // Subscribe to Pasta's notifications 
+            Pasta.addActivityListener(function(activity) {
+                console.log("Got some activity to send to Elm:", activity);
+                app.ports.activityChanges.send(activity);
             });
         </script>
     </body>
