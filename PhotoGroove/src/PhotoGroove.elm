@@ -2,10 +2,13 @@ port module PhotoGroove exposing
     ( Model
     , Msg(..)
     , Photo
+    , Status(..)
     , initialModel
     , main
     , photoDecoder
     , update
+    , urlPrefix
+    , view
     )
 
 import Browser
