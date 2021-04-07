@@ -17,62 +17,55 @@ import PhotoGroove
         , view
         )
 import Test exposing (..)
+import Test.Html.Event as Event
 import Test.Html.Query as Query
 import Test.Html.Selector exposing (attribute, tag, text)
 
 
-fuzzyDecoderTest : Test
-fuzzyDecoderTest =
-    fuzz2 string int "title defaults to (untitled)" <|
-        \url size ->
-            [ ( "url", E.string url )
-            , ( "size", E.int size )
-            ]
-                -- List (String, Value)
-                |> E.object
-                -- Value
-                |> D.decodeValue PhotoGroove.photoDecoder
-                -- Result Photo Err
-                |> Result.map .title
-                -- Result String Err
-                |> Expect.equal (Ok "(untitled)")
 
-
-
--- Expectation
+{-
+   Decoder Tests
+-}
 
 
 decoderTest : Test
 decoderTest =
     test "title defaults to (untitled" <|
         \_ ->
+            -- List (String, Value)
             [ ( "url", E.string "fruits.com" )
             , ( "size", E.int 5 )
             ]
-                -- List (String, Value)
-                |> E.object
                 -- Value
-                |> D.decodeValue PhotoGroove.photoDecoder
+                |> E.object
                 -- Result Photo Err
-                |> Result.map .title
+                |> D.decodeValue PhotoGroove.photoDecoder
                 -- Result String Err
+                |> Result.map .title
+                |> Expect.equal (Ok "(untitled)")
+
+
+fuzzyDecoderTest : Test
+fuzzyDecoderTest =
+    fuzz2 string int "title defaults to (untitled)" <|
+        \url size ->
+            -- List (String, Value)
+            [ ( "url", E.string url )
+            , ( "size", E.int size )
+            ]
+                -- Value
+                |> E.object
+                -- Result Photo Err
+                |> D.decodeValue PhotoGroove.photoDecoder
+                -- Result String Err
+                |> Result.map .title
                 |> Expect.equal (Ok "(untitled)")
 
 
 
--- Expectation
--- Update tests
-
-
-slidHueSetsHue : Test
-slidHueSetsHue =
-    fuzz int "SlidHue sets the hue" <|
-        \amount ->
-            initialModel
-                |> update (SlidHue amount)
-                |> Tuple.first
-                |> .hue
-                |> Expect.equal amount
+{-
+   Update Tests
+-}
 
 
 sliders : Test
@@ -96,7 +89,9 @@ testSlider description toMsg amountFromModel =
 
 
 
--- View Tests
+{-
+   View Tests
+-}
 
 
 noPhotosNoThumbnails : Test
@@ -127,16 +122,22 @@ photoFromUrl url =
     { url = url, size = 0, title = "" }
 
 
+urlFuzzer : Fuzzer (List String)
+urlFuzzer = 
+    Fuzz.intRange 1 5
+        |> Fuzz.map urlsFromCount
+
+urlsFromCount : Int -> List String    
+urlsFromCount urlCount = 
+    List.range 1 urlCount
+        |> List.map (\num -> String.fromInt num ++ ".png")
+        
+
 thumbnailsWork : Test
 thumbnailsWork =
-    fuzz (Fuzz.intRange 1 5) "URLs render as thumbnais" <|
-        \urlCount ->
+    fuzz urlFuzzer "URLs render as thumbnais" <|
+        \urls ->
             let
-                urls : List String
-                urls =
-                    List.range 1 urlCount
-                        |> List.map (\num -> String.fromInt num ++ ".png")
-
                 thumbnailChecks : List (Query.Single msg -> Expectation)
                 thumbnailChecks =
                     List.map thumbnailRendered urls
@@ -145,3 +146,13 @@ thumbnailsWork =
                 |> view
                 |> Query.fromHtml
                 |> Expect.all thumbnailChecks
+
+        
+fuzz3 urlFuzzer string urlFuzzer "clicking a thumbnail selects it" <|
+    \urlsBefore urlToSelect urlsAfter -> 
+        let 
+            url = 
+                urlToSelect ++ ".jpeg"
+
+            photos = 
+                urlsBefore ++ url :: otherUrls
