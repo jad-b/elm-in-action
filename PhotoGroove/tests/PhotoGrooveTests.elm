@@ -30,23 +30,6 @@ import Test.Html.Selector exposing (attribute, tag, text)
 
 decoderTest : Test
 decoderTest =
-    test "title defaults to (untitled" <|
-        \_ ->
-            -- List (String, Value)
-            [ ( "url", E.string "fruits.com" )
-            , ( "size", E.int 5 )
-            ]
-                -- Value
-                |> E.object
-                -- Result Photo Err
-                |> D.decodeValue PhotoGroove.photoDecoder
-                -- Result String Err
-                |> Result.map .title
-                |> Expect.equal (Ok "(untitled)")
-
-
-fuzzyDecoderTest : Test
-fuzzyDecoderTest =
     fuzz2 string int "title defaults to (untitled)" <|
         \url size ->
             -- List (String, Value)
@@ -123,15 +106,16 @@ photoFromUrl url =
 
 
 urlFuzzer : Fuzzer (List String)
-urlFuzzer = 
+urlFuzzer =
     Fuzz.intRange 1 5
         |> Fuzz.map urlsFromCount
 
-urlsFromCount : Int -> List String    
-urlsFromCount urlCount = 
+
+urlsFromCount : Int -> List String
+urlsFromCount urlCount =
     List.range 1 urlCount
         |> List.map (\num -> String.fromInt num ++ ".png")
-        
+
 
 thumbnailsWork : Test
 thumbnailsWork =
@@ -147,12 +131,32 @@ thumbnailsWork =
                 |> Query.fromHtml
                 |> Expect.all thumbnailChecks
 
-        
-fuzz3 urlFuzzer string urlFuzzer "clicking a thumbnail selects it" <|
-    \urlsBefore urlToSelect urlsAfter -> 
-        let 
-            url = 
-                urlToSelect ++ ".jpeg"
 
-            photos = 
-                urlsBefore ++ url :: otherUrls
+
+{-
+   Event tests
+-}
+
+
+clickThumbnail : Test
+clickThumbnail =
+    fuzz3 urlFuzzer string urlFuzzer "clicking a thumbnail selects it" <|
+        \urlsBefore urlToSelect urlsAfter ->
+            let
+                url =
+                    urlToSelect ++ ".jpeg"
+
+                photos =
+                    --
+                    (urlsBefore ++ url :: urlsAfter)
+                        |> List.map photoFromUrl
+
+                srcToClick =
+                    urlPrefix ++ url
+            in
+            { initialModel | status = Loaded photos "" }
+                |> view
+                |> Query.fromHtml
+                |> Query.find [ tag "img", attribute (Attr.src srcToClick) ]
+                |> Event.simulate Event.click
+                |> Event.expect (ClickedPhoto url)
