@@ -1,6 +1,7 @@
 module PhotoFolders exposing (main)
 
 import Browser
+import Dict exposing (Dict)
 import Html exposing (..)
 import Html.Attributes exposing (class, src)
 import Html.Events exposing (onClick)
@@ -11,12 +12,15 @@ import Json.Decode.Pipeline exposing (required)
 
 type alias Model =
     { selectedPhotoUrl : Maybe String
+    , photos : Dict String Photo
     }
 
 
 initialModel : Model
 initialModel =
-    { selectedPhotoUrl = Nothing }
+    { selectedPhotoUrl = Nothing 
+    , photos = Dict.empty
+    }
 
 
 init : () -> ( Model, Cmd Msg )
@@ -65,3 +69,47 @@ main =
         , update = update
         , subscriptions = \_ -> Sub.none
         }
+
+
+type alias Photo = 
+    { title : String
+    , size : int
+    , relatedUrls : List String
+    , url : String
+    }
+
+viewSelectedPhoto : Photo -> Html Msg
+viewSelectedPhoto photo = 
+    div
+        [ class "selected-photo" ]
+        [ h2 [ text photo.title ] 
+        , img [src (urlPrefix ++ "photos/" ++ photo.url ++ "/full")] []
+        , span [] [ text (String.fromInt photo.size ++ "KB") ]
+        , h3 [] [ text "Related" ]
+        , div [ class "related-photos" ]
+            (List.map viewRelatedPhoto photo.relatedUrls)
+        ]
+
+
+selectedPhoto : Html Msg
+selectedPhoto = 
+    case model.selectedPhotoUrl of
+        Just url -> 
+            case Dict.get url model.photos of  
+                Just photo -> 
+                    viewSelectedPhoto photo
+
+                Nothing -> 
+                    text ""
+
+        Nothing -> 
+            text ""
+
+
+viewRelatedPhoto : String -> Html Msg
+viewRelatedPhoto url = 
+    img
+        [ class "related-photos"
+        , onClick (ClickedPhoto url)
+        , src (urlPrefix ++ "photos/" ++ url ++ "/thumb")
+        ]
