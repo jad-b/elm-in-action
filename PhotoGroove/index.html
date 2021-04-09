@@ -1,4 +1,7 @@
 <!doctype html>
+<head>
+    <meta charset="utf-8">
+</head>
 <html>
     <script>
         class RangeSlider extends HTMLElement {
@@ -12,7 +15,7 @@
                 // 'this.*' are properties set within Elm
                 var jsr = new JSR(input, {
                     max: this.max,
-                    values: [this.val],
+                    values: [this.val]/*  */,
                     sliders: 1,
                     grid: false
                 })
@@ -44,6 +47,9 @@
         <script src="http://elm-in-action.com/pasta.js"></script>
         <script src="app.js"></script>
         <script>
+            var app = Elm.PhotoFolders.init({node: document.getElementById("app")});
+        </script>
+        <!-- <script>
             var app = Elm.PhotoGroove.init({
                 node: document.getElementById("app"),
                 flags: Pasta.version
@@ -63,6 +69,6 @@
                 console.log("Got some activity to send to Elm:", activity);
                 app.ports.activityChanges.send(activity);
             });
-        </script>
+        </script> -->
     </body>
 </html>
