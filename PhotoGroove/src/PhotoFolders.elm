@@ -18,7 +18,7 @@ type alias Model =
 
 initialModel : Model
 initialModel =
-    { selectedPhotoUrl = Nothing 
+    { selectedPhotoUrl = Nothing
     , photos = Dict.empty
     }
 
@@ -58,7 +58,22 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    h1 [] [ text "The Grooviest Folders the world has ever seen" ]
+    let
+        photoByUrl : String -> Maybe Photo
+        photoByUrl url =
+            Dict.get url model.photos
+
+        selectedPhoto : Html Msg
+        selectedPhoto =
+            case Maybe.andThen photoByUrl model.selectedPhotoUrl of
+                Just photo ->
+                    viewSelectedPhoto photo
+
+                Nothing ->
+                    text ""
+    in
+    div [ class "content" ]
+        [ div [ class "selected-photo" ] [ selectedPhoto ] ]
 
 
 main : Program () Model Msg
@@ -71,19 +86,20 @@ main =
         }
 
 
-type alias Photo = 
+type alias Photo =
     { title : String
-    , size : int
+    , size : Int
     , relatedUrls : List String
     , url : String
     }
 
+
 viewSelectedPhoto : Photo -> Html Msg
-viewSelectedPhoto photo = 
+viewSelectedPhoto photo =
     div
         [ class "selected-photo" ]
-        [ h2 [ text photo.title ] 
-        , img [src (urlPrefix ++ "photos/" ++ photo.url ++ "/full")] []
+        [ h2 [] [ text photo.title ]
+        , img [ src (urlPrefix ++ "photos/" ++ photo.url ++ "/full") ] []
         , span [] [ text (String.fromInt photo.size ++ "KB") ]
         , h3 [] [ text "Related" ]
         , div [ class "related-photos" ]
@@ -91,25 +107,16 @@ viewSelectedPhoto photo =
         ]
 
 
-selectedPhoto : Html Msg
-selectedPhoto = 
-    case model.selectedPhotoUrl of
-        Just url -> 
-            case Dict.get url model.photos of  
-                Just photo -> 
-                    viewSelectedPhoto photo
-
-                Nothing -> 
-                    text ""
-
-        Nothing -> 
-            text ""
-
-
 viewRelatedPhoto : String -> Html Msg
-viewRelatedPhoto url = 
+viewRelatedPhoto url =
     img
         [ class "related-photos"
         , onClick (ClickedPhoto url)
         , src (urlPrefix ++ "photos/" ++ url ++ "/thumb")
         ]
+        []
+
+
+urlPrefix : String
+urlPrefix =
+    "http://elm-in-action.com/"
