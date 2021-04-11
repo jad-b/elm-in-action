@@ -6110,7 +6110,53 @@ var $elm$http$Http$get = function (r) {
 		{body: $elm$http$Http$emptyBody, expect: r.expect, headers: _List_Nil, method: 'GET', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
 };
 var $author$project$PhotoFolders$initialModel = {photos: $elm$core$Dict$empty, selectedPhotoUrl: $elm$core$Maybe$Nothing};
-var $author$project$PhotoFolders$modelDecoder = $elm$json$Json$Decode$succeed($author$project$PhotoFolders$initialModel);
+var $elm$core$Dict$fromList = function (assocs) {
+	return A3(
+		$elm$core$List$foldl,
+		F2(
+			function (_v0, dict) {
+				var key = _v0.a;
+				var value = _v0.b;
+				return A3($elm$core$Dict$insert, key, value, dict);
+			}),
+		$elm$core$Dict$empty,
+		assocs);
+};
+var $author$project$PhotoFolders$modelDecoder = $elm$json$Json$Decode$succeed(
+	{
+		photos: $elm$core$Dict$fromList(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'trevi',
+					{
+						relatedUrls: _List_fromArray(
+							['coli', 'fresco']),
+						size: 34,
+						title: 'Trevi',
+						url: 'trevi'
+					}),
+					_Utils_Tuple2(
+					'fresco',
+					{
+						relatedUrls: _List_fromArray(
+							['trevi']),
+						size: 46,
+						title: 'Fresco',
+						url: 'fresco'
+					}),
+					_Utils_Tuple2(
+					'coli',
+					{
+						relatedUrls: _List_fromArray(
+							['trevi', 'fresco']),
+						size: 36,
+						title: 'Coliseum',
+						url: 'coli'
+					})
+				])),
+		selectedPhotoUrl: $elm$core$Maybe$Just('trevi')
+	});
 var $author$project$PhotoFolders$init = function (_v0) {
 	return _Utils_Tuple2(
 		$author$project$PhotoFolders$initialModel,

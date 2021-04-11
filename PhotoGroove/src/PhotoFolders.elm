@@ -35,7 +35,33 @@ init _ =
 
 modelDecoder : Decoder Model
 modelDecoder =
-    Decode.succeed initialModel
+    Decode.succeed 
+        { selectedPhotoUrl = Just "trevi" 
+        , photos = Dict.fromList
+            [ ( "trevi"
+              , { title = "Trevi"
+                , relatedUrls = [ "coli", "fresco" ]
+                , size = 34
+                , url = "trevi"
+                }
+              ) 
+            , ( "fresco"
+              , { title = "Fresco"
+                , relatedUrls = [ "trevi" ]
+                , size = 46
+                , url ="fresco" 
+                } 
+              )
+            , ( "coli"
+              , { title = "Coliseum"
+                , relatedUrls = [ "trevi", "fresco" ]
+                , size = 36
+                , url ="coli"
+                }
+              )
+            ]
+        }
+
 
 
 type Msg
