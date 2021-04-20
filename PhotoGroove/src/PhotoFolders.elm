@@ -136,8 +136,8 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ClickedFolder path -> 
-            ( { model | root = toggleExpanded path model.root }, Cmd.none)
+        ClickedFolder path ->
+            ( { model | root = toggleExpanded path model.root }, Cmd.none )
 
         ClickedPhoto url ->
             ( { model | selectedPhotoUrl = Just url }, Cmd.none )
@@ -178,16 +178,17 @@ viewFolder : FolderPath -> Folder -> Html Msg
 viewFolder path (Folder folder) =
     let
         viewSubfolder : Int -> Folder -> Html Msg
-        viewSubfolder index subfolder = 
+        viewSubfolder index subfolder =
+            -- Note how viewSubfolder invokes viewFolder symbiotically
             viewFolder (appendIndex index path) subfolder
 
-        folderLabel = 
+        folderLabel =
             label [ onClick (ClickedFolder path) ] [ text folder.name ]
-
     in
     if folder.expanded then
-        let 
-            contents = 
+        let
+            contents =
+                -- Display this folder's subfolders, follower by its photo names
                 List.append
                     (List.indexedMap viewSubfolder folder.subfolders)
                     (List.map viewPhoto folder.photoUrls)
@@ -196,8 +197,19 @@ viewFolder path (Folder folder) =
             [ folderLabel
             , div [ class "contents" ] contents
             ]
+
     else
         div [ class "folder collapsed" ] [ folderLabel ]
+
+
+
+-- Nests a subfolder by index beneath
+--
+-- Examples:
+-- The first subfolder beneath the root:
+-- 0 -> End -> Subfolder 0 End
+-- The second child of the first subfolder:
+-- 1 -> (Subfolder 0 End) -> Subfolder 1 (Subfodler 0 End)
 
 
 appendIndex : Int -> FolderPath -> FolderPath
@@ -228,7 +240,7 @@ type alias Photo =
     }
 
 
-viewPhoto: String -> Html Msg
+viewPhoto : String -> Html Msg
 viewPhoto url =
     div [ class "photo", onClick (ClickedPhoto url) ]
         [ text url ]
@@ -263,29 +275,89 @@ urlPrefix =
 
 
 type FolderPath
-    = End 
+    = End
     | Subfolder Int FolderPath
+
+
+
+-- NEXT
 
 
 toggleExpanded : FolderPath -> Folder -> Folder
 toggleExpanded path (Folder folder) =
-    case path of 
-        End -> 
+    case path of
+        End ->
             Folder { folder | expanded = not folder.expanded }
 
-        Subfolder targetIndex remainingPath -> 
+        Subfolder targetIndex remainingPath ->
             let
                 subfolders : List Folder
-                subfolders = 
+                subfolders =
                     List.indexedMap transform folder.subfolders
 
                 transform : Int -> Folder -> Folder
-                transform currentIndex currentSubfolder = 
-                    if currentIndex == targetIndex then 
-                        toggleExpanded remainingPath currentSubfolder 
+                transform currentIndex currentSubfolder =
+                    if currentIndex == targetIndex then
+                        toggleExpanded remainingPath currentSubfolder
 
                     else
                         currentSubfolder
             in
             Folder { folder | subfolders = subfolders }
-        
+
+
+
+-- JsonPhoto : String -> Int -> List String -> JsonPhoto
+
+
+type alias JsonPhoto =
+    { title : String
+    , size : Int
+    , relatedUrls : List String
+    }
+
+
+jsonPhotoDecoder : Decoder JsonPhoto
+jsonPhotoDecoder =
+    -- Decoder (String -> Int -> List String -> JsonPhoto)
+    Decode.succeed JsonPhoto
+        -- required : String -> (Decoder a) -> Decoder (a -> b) -> Decoder b
+        -- required : "title" -> string
+        --              -> Decoder (String -> (Int -> List String -> JsonPhoto))
+        --              -> Decoder (Int -> List String -> JsonPhoto)
+        -- Decoder (Int -> List String -> JsonPhoto)
+        |> required "title" string
+        -- Decoder (List String -> JsonPhoto)
+        |> required "size" int
+        -- Decoder JsonPhoto
+        |> required "related_photos" (list string)
+
+
+finishPhoto : ( String, JsonPhoto ) -> ( String, Photo )
+finishPhoto ( url, json ) =
+    ( url
+    , { url = url
+      , size = json.size
+      , title = json.title
+      , relatedUrls = json.relatedUrls
+      }
+    )
+
+
+fromPairs : List ( String, JsonPhoto ) -> Dict String Photo
+fromPairs pairs =
+    pairs
+        |> List.map finishPhoto
+        |> Dict.fromList
+
+
+photosDecoder : Decoder (Dict String Photo)
+photosDecoder =
+    -- Decoder a -> Decoder (List ( String, a ))
+    -- => Decoder (List ( String, JsonPhoto ))
+    Decode.keyValuePairs jsonPhotoDecoder
+        -- (a -> b) -> Decoder a -> Decoder b
+        -- where
+        --   a = List ( String, JsonPhoto )
+        --   b = Dict String Photo
+        |> Decode.map fromPairs
