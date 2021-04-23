@@ -1,9 +1,12 @@
 module Main exposing (main)
 
 import Browser exposing (Document)
+import Browser.Navigation as Nav
 import Html exposing (Html, a, footer, h1, li, nav, text, ul)
 import Html.Attributes exposing (classList, href)
 import Html.Lazy exposing (lazy)
+import Url exposing (Url)
+import Url.Parser as Parser exposing ((</>), Parser, s, string)
 
 
 type alias Model =
@@ -11,7 +14,8 @@ type alias Model =
 
 
 type Page
-    = Gallery
+    = SelectedPhoto String
+    | Gallery
     | Folders
     | NotFound
 
@@ -71,15 +75,35 @@ subscriptions model =
     Sub.none
 
 
+init : () -> Url -> Nav.Key -> (Model, Cmd Msg)
+init flags url key = 
+    case url.path of
+        "/gallery" -> 
+            ( { page = Gallery }, Cmd.none )
+
+        "/" -> 
+            ( { page = Folders }, Cmd.none )
+
+        _ -> 
+            ( { page = NotFound }, Cmd.none )
+
+
+parser : Parser (Page -> a) a
+parser = 
+    Parser.map SelectedPhoto (s "photos" </> Parser.string)
+
+
 main : Program () Model Msg
 main =
-    Browser.document
-        { init = \_ -> ( { page = Folders }, Cmd.none )
+    Browser.application
+        { init = init 
+        , onUrlRequest = \_ -> Debug.todo "handle URL requests"
+        , onUrlChange = \_ -> Debug.todo "handle URL changes"
         , subscriptions = subscriptions
         , update = update
-
         -- Browser.element.view must reutrn Html Msg
         -- Browser.document.view must return Document Msg
-        -- Document gives Elm access to the entire web page, instead of a (parent) DOM node
+        -- Document gives Elm access to the entire web page, instead of a
+        -- (parent) DOM node
         , view = view
         }
