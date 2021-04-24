@@ -49,11 +49,39 @@ viewHeader page =
 
         navLink : Page -> { url : String, caption : String } -> Html msg
         navLink targetPage { url, caption } =
-            li [ classList [ 
-                ( "active", page == targetPage ) ] ]
+            li
+                [ classList
+                    [ ( "active", isActive { link = targetPage, page =  page } )
+                    ]
+                ]
                 [ a [ href url ] [ text caption ] ]
     in
-    nav [ ] [ logo, links ]
+    nav [] [ logo, links ]
+
+
+isActive : { link : Page, page : Page } -> Bool
+isActive { link, page } =
+    case ( link, page ) of
+        ( Gallery, Gallery ) ->
+            True
+
+        ( Gallery, _ ) ->
+            False
+
+        ( Folders, Folders ) ->
+            True
+
+        ( Folders, SelectedPhoto _ ) ->
+            True
+
+        ( Folders, _ ) ->
+            False
+
+        ( SelectedPhoto _, _ ) ->
+            False
+
+        ( NotFound, _ ) ->
+            False
 
 
 viewFooter : Html msg
@@ -75,32 +103,35 @@ subscriptions model =
     Sub.none
 
 
-init : () -> Url -> Nav.Key -> (Model, Cmd Msg)
-init flags url key = 
-    case url.path of
-        "/gallery" -> 
-            ( { page = Gallery }, Cmd.none )
+init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
+init flags url key =
+    ( { page = urlToPage url }, Cmd.none )
 
-        "/" -> 
-            ( { page = Folders }, Cmd.none )
 
-        _ -> 
-            ( { page = NotFound }, Cmd.none )
+urlToPage : Url -> Page
+urlToPage url =
+    Parser.parse parser url
+        |> Maybe.withDefault NotFound
 
 
 parser : Parser (Page -> a) a
-parser = 
-    Parser.map SelectedPhoto (s "photos" </> Parser.string)
+parser =
+    Parser.oneOf
+        [ Parser.map Folders Parser.top
+        , Parser.map Gallery (s "gallery")
+        , Parser.map SelectedPhoto (s "photos" </> Parser.string)
+        ]
 
 
 main : Program () Model Msg
 main =
     Browser.application
-        { init = init 
+        { init = init
         , onUrlRequest = \_ -> Debug.todo "handle URL requests"
         , onUrlChange = \_ -> Debug.todo "handle URL changes"
         , subscriptions = subscriptions
         , update = update
+
         -- Browser.element.view must reutrn Html Msg
         -- Browser.document.view must return Document Msg
         -- Document gives Elm access to the entire web page, instead of a
