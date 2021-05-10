@@ -1,8 +1,9 @@
-port module PhotoGroove exposing
+port module PhotoGallery exposing
     ( Model
     , Msg(..)
     , Photo
     , Status(..)
+    , init
     , initialModel
     , main
     , photoDecoder
