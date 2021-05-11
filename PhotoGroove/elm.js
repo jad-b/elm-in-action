@@ -6792,7 +6792,6 @@ var $author$project$PhotoGallery$SlidRipple = function (a) {
 var $author$project$PhotoGallery$Small = {$: 'Small'};
 var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$html$Html$canvas = _VirtualDom_node('canvas');
-var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $elm$html$Html$h3 = _VirtualDom_node('h3');
 var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
@@ -6987,13 +6986,6 @@ var $author$project$PhotoGallery$viewLoaded = F3(
 		return _List_fromArray(
 			[
 				A2(
-				$elm$html$Html$h1,
-				_List_Nil,
-				_List_fromArray(
-					[
-						$elm$html$Html$text('Photo Groove')
-					])),
-				A2(
 				$elm$html$Html$button,
 				_List_fromArray(
 					[
@@ -7099,12 +7091,6 @@ var $author$project$Main$ClickedLink = function (a) {
 	return {$: 'ClickedLink', a: a};
 };
 var $elm$browser$Browser$application = _Browser_application;
-var $author$project$Main$FoldersPage = function (a) {
-	return {$: 'FoldersPage', a: a};
-};
-var $author$project$Main$GalleryPage = function (a) {
-	return {$: 'GalleryPage', a: a};
-};
 var $author$project$Main$NotFound = {$: 'NotFound'};
 var $author$project$PhotoFolders$GotInitialModel = function (a) {
 	return {$: 'GotInitialModel', a: a};
@@ -7559,44 +7545,98 @@ var $elm$url$Url$Parser$parse = F2(
 					url.fragment,
 					$elm$core$Basics$identity)));
 	});
-var $author$project$Main$urlToPage = F2(
-	function (pastaVersion, url) {
+var $author$project$Main$FoldersPage = function (a) {
+	return {$: 'FoldersPage', a: a};
+};
+var $author$project$Main$GotFoldersMsg = function (a) {
+	return {$: 'GotFoldersMsg', a: a};
+};
+var $elm$core$Platform$Cmd$map = _Platform_map;
+var $author$project$Main$toFolders = F2(
+	function (model, _v0) {
+		var folders = _v0.a;
+		var cmd = _v0.b;
+		return _Utils_Tuple2(
+			_Utils_update(
+				model,
+				{
+					page: $author$project$Main$FoldersPage(folders)
+				}),
+			A2($elm$core$Platform$Cmd$map, $author$project$Main$GotFoldersMsg, cmd));
+	});
+var $author$project$Main$GalleryPage = function (a) {
+	return {$: 'GalleryPage', a: a};
+};
+var $author$project$Main$GotGalleryMsg = function (a) {
+	return {$: 'GotGalleryMsg', a: a};
+};
+var $author$project$Main$toGallery = F2(
+	function (model, _v0) {
+		var folders = _v0.a;
+		var cmd = _v0.b;
+		return _Utils_Tuple2(
+			_Utils_update(
+				model,
+				{
+					page: $author$project$Main$GalleryPage(folders)
+				}),
+			A2($elm$core$Platform$Cmd$map, $author$project$Main$GotGalleryMsg, cmd));
+	});
+var $author$project$Main$updateUrl = F2(
+	function (url, model) {
 		var _v0 = A2($elm$url$Url$Parser$parse, $author$project$Main$pageParser, url);
 		if (_v0.$ === 'Just') {
 			switch (_v0.a.$) {
 				case 'Gallery':
 					var _v1 = _v0.a;
-					return $author$project$Main$GalleryPage(
+					return A2(
+						$author$project$Main$toGallery,
+						model,
 						$author$project$PhotoGallery$init(
-							$elm$json$Json$Encode$float(pastaVersion)).a);
+							$elm$json$Json$Encode$float(model.pastaVersion)));
 				case 'Folders':
 					var _v2 = _v0.a;
-					return $author$project$Main$FoldersPage(
-						$author$project$PhotoFolders$init($elm$core$Maybe$Nothing).a);
+					return A2(
+						$author$project$Main$toFolders,
+						model,
+						$author$project$PhotoFolders$init($elm$core$Maybe$Nothing));
 				default:
 					var filename = _v0.a.a;
-					return $author$project$Main$FoldersPage(
+					return A2(
+						$author$project$Main$toFolders,
+						model,
 						$author$project$PhotoFolders$init(
-							$elm$core$Maybe$Just(filename)).a);
+							$elm$core$Maybe$Just(filename)));
 			}
 		} else {
-			return $author$project$Main$NotFound;
+			return _Utils_Tuple2(
+				_Utils_update(
+					model,
+					{page: $author$project$Main$NotFound}),
+				$elm$core$Platform$Cmd$none);
 		}
 	});
 var $author$project$Main$init = F3(
 	function (pastaVersion, url, key) {
-		return _Utils_Tuple2(
-			{
-				key: key,
-				page: A2($author$project$Main$urlToPage, pastaVersion, url),
-				pastaVersion: pastaVersion
-			},
-			$elm$core$Platform$Cmd$none);
+		return A2(
+			$author$project$Main$updateUrl,
+			url,
+			{key: key, page: $author$project$Main$NotFound, pastaVersion: pastaVersion});
 	});
+var $elm$core$Platform$Sub$map = _Platform_map;
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
 var $author$project$Main$subscriptions = function (model) {
-	return $elm$core$Platform$Sub$none;
+	var _v0 = model.page;
+	if (_v0.$ === 'GalleryPage') {
+		var gallery = _v0.a;
+		return A2(
+			$elm$core$Platform$Sub$map,
+			$author$project$Main$GotGalleryMsg,
+			$author$project$PhotoGallery$subscriptions(gallery));
+	} else {
+		return $elm$core$Platform$Sub$none;
+	}
 };
 var $elm$browser$Browser$Navigation$load = _Browser_load;
 var $elm$browser$Browser$Navigation$pushUrl = _Browser_pushUrl;
@@ -7644,36 +7684,314 @@ var $elm$url$Url$toString = function (url) {
 					_Utils_ap(http, url.host)),
 				url.path)));
 };
+var $elm$core$Basics$not = _Basics_not;
+var $author$project$PhotoFolders$toggleExpanded = F2(
+	function (path, _v0) {
+		var folder = _v0.a;
+		if (path.$ === 'End') {
+			return $author$project$PhotoFolders$Folder(
+				_Utils_update(
+					folder,
+					{expanded: !folder.expanded}));
+		} else {
+			var targetIndex = path.a;
+			var remainingPath = path.b;
+			var transform = F2(
+				function (currentIndex, currentSubfolder) {
+					return _Utils_eq(currentIndex, targetIndex) ? A2($author$project$PhotoFolders$toggleExpanded, remainingPath, currentSubfolder) : currentSubfolder;
+				});
+			var subfolders = A2($elm$core$List$indexedMap, transform, folder.subfolders);
+			return $author$project$PhotoFolders$Folder(
+				_Utils_update(
+					folder,
+					{subfolders: subfolders}));
+		}
+	});
+var $author$project$PhotoFolders$update = F2(
+	function (msg, model) {
+		switch (msg.$) {
+			case 'ClickedFolder':
+				var path = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							root: A2($author$project$PhotoFolders$toggleExpanded, path, model.root)
+						}),
+					$elm$core$Platform$Cmd$none);
+			case 'ClickedPhoto':
+				var url = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							selectedPhotoUrl: $elm$core$Maybe$Just(url)
+						}),
+					$elm$core$Platform$Cmd$none);
+			default:
+				if (msg.a.$ === 'Ok') {
+					var newModel = msg.a.a;
+					return _Utils_Tuple2(newModel, $elm$core$Platform$Cmd$none);
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
+		}
+	});
 var $author$project$Main$update = F2(
 	function (msg, model) {
-		if (msg.$ === 'ClickedLink') {
-			if (msg.a.$ === 'External') {
-				var href = msg.a.a;
-				return _Utils_Tuple2(
-					model,
-					$elm$browser$Browser$Navigation$load(href));
-			} else {
-				var url = msg.a.a;
-				return _Utils_Tuple2(
-					model,
-					A2(
-						$elm$browser$Browser$Navigation$pushUrl,
-						model.key,
-						$elm$url$Url$toString(url)));
-			}
-		} else {
-			var url = msg.a;
-			return _Utils_Tuple2(
-				_Utils_update(
-					model,
-					{
-						page: A2($author$project$Main$urlToPage, model.pastaVersion, url)
-					}),
-				$elm$core$Platform$Cmd$none);
+		switch (msg.$) {
+			case 'ClickedLink':
+				if (msg.a.$ === 'External') {
+					var href = msg.a.a;
+					return _Utils_Tuple2(
+						model,
+						$elm$browser$Browser$Navigation$load(href));
+				} else {
+					var url = msg.a.a;
+					return _Utils_Tuple2(
+						model,
+						A2(
+							$elm$browser$Browser$Navigation$pushUrl,
+							model.key,
+							$elm$url$Url$toString(url)));
+				}
+			case 'ChangedUrl':
+				var url = msg.a;
+				return A2($author$project$Main$updateUrl, url, model);
+			case 'GotFoldersMsg':
+				var foldersMsg = msg.a;
+				var _v1 = model.page;
+				if (_v1.$ === 'FoldersPage') {
+					var folders = _v1.a;
+					return A2(
+						$author$project$Main$toFolders,
+						model,
+						A2($author$project$PhotoFolders$update, foldersMsg, folders));
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
+			default:
+				var galleryMsg = msg.a;
+				var _v2 = model.page;
+				if (_v2.$ === 'GalleryPage') {
+					var gallery = _v2.a;
+					return A2(
+						$author$project$Main$toGallery,
+						model,
+						A2($author$project$PhotoGallery$update, galleryMsg, gallery));
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
 		}
 	});
 var $elm$virtual_dom$VirtualDom$lazy = _VirtualDom_lazy;
 var $elm$html$Html$Lazy$lazy = $elm$virtual_dom$VirtualDom$lazy;
+var $elm$virtual_dom$VirtualDom$map = _VirtualDom_map;
+var $elm$html$Html$map = $elm$virtual_dom$VirtualDom$map;
+var $author$project$PhotoFolders$End = {$: 'End'};
+var $elm$core$Maybe$andThen = F2(
+	function (callback, maybeValue) {
+		if (maybeValue.$ === 'Just') {
+			var value = maybeValue.a;
+			return callback(value);
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $author$project$PhotoFolders$ClickedFolder = function (a) {
+	return {$: 'ClickedFolder', a: a};
+};
+var $author$project$PhotoFolders$Subfolder = F2(
+	function (a, b) {
+		return {$: 'Subfolder', a: a, b: b};
+	});
+var $author$project$PhotoFolders$appendIndex = F2(
+	function (index, path) {
+		if (path.$ === 'End') {
+			return A2($author$project$PhotoFolders$Subfolder, index, $author$project$PhotoFolders$End);
+		} else {
+			var subfolderIndex = path.a;
+			var remainingPath = path.b;
+			return A2(
+				$author$project$PhotoFolders$Subfolder,
+				subfolderIndex,
+				A2($author$project$PhotoFolders$appendIndex, index, remainingPath));
+		}
+	});
+var $author$project$PhotoFolders$ClickedPhoto = function (a) {
+	return {$: 'ClickedPhoto', a: a};
+};
+var $author$project$PhotoFolders$viewPhoto = function (url) {
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('photo'),
+				$elm$html$Html$Events$onClick(
+				$author$project$PhotoFolders$ClickedPhoto(url))
+			]),
+		_List_fromArray(
+			[
+				$elm$html$Html$text(url)
+			]));
+};
+var $author$project$PhotoFolders$viewFolder = F2(
+	function (path, _v0) {
+		var folder = _v0.a;
+		var viewSubfolder = F2(
+			function (index, subfolder) {
+				return A2(
+					$author$project$PhotoFolders$viewFolder,
+					A2($author$project$PhotoFolders$appendIndex, index, path),
+					subfolder);
+			});
+		var folderLabel = A2(
+			$elm$html$Html$label,
+			_List_fromArray(
+				[
+					$elm$html$Html$Events$onClick(
+					$author$project$PhotoFolders$ClickedFolder(path))
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text(folder.name)
+				]));
+		if (folder.expanded) {
+			var contents = A2(
+				$elm$core$List$append,
+				A2($elm$core$List$indexedMap, viewSubfolder, folder.subfolders),
+				A2($elm$core$List$map, $author$project$PhotoFolders$viewPhoto, folder.photoUrls));
+			return A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('folder expanded')
+					]),
+				_List_fromArray(
+					[
+						folderLabel,
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('contents')
+							]),
+						contents)
+					]));
+		} else {
+			return A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('folder collapsed')
+					]),
+				_List_fromArray(
+					[folderLabel]));
+		}
+	});
+var $elm$html$Html$h2 = _VirtualDom_node('h2');
+var $elm$html$Html$span = _VirtualDom_node('span');
+var $author$project$PhotoFolders$urlPrefix = 'http://elm-in-action.com/';
+var $author$project$PhotoFolders$viewRelatedPhoto = function (url) {
+	return A2(
+		$elm$html$Html$img,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('related-photos'),
+				$elm$html$Html$Events$onClick(
+				$author$project$PhotoFolders$ClickedPhoto(url)),
+				$elm$html$Html$Attributes$src($author$project$PhotoFolders$urlPrefix + ('photos/' + (url + '/thumb')))
+			]),
+		_List_Nil);
+};
+var $author$project$PhotoFolders$viewSelectedPhoto = function (photo) {
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('selected-photo')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$h2,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text(photo.title)
+					])),
+				A2(
+				$elm$html$Html$img,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$src($author$project$PhotoFolders$urlPrefix + ('photos/' + (photo.url + '/full')))
+					]),
+				_List_Nil),
+				A2(
+				$elm$html$Html$span,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text(
+						$elm$core$String$fromInt(photo.size) + 'KB')
+					])),
+				A2(
+				$elm$html$Html$h3,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Related')
+					])),
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('related-photos')
+					]),
+				A2($elm$core$List$map, $author$project$PhotoFolders$viewRelatedPhoto, photo.relatedUrls))
+			]));
+};
+var $author$project$PhotoFolders$view = function (model) {
+	var photoByUrl = function (url) {
+		return A2($elm$core$Dict$get, url, model.photos);
+	};
+	var selectedPhoto = function () {
+		var _v0 = A2($elm$core$Maybe$andThen, photoByUrl, model.selectedPhotoUrl);
+		if (_v0.$ === 'Just') {
+			var photo = _v0.a;
+			return $author$project$PhotoFolders$viewSelectedPhoto(photo);
+		} else {
+			return $elm$html$Html$text('');
+		}
+	}();
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('content')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('folders')
+					]),
+				_List_fromArray(
+					[
+						A2($author$project$PhotoFolders$viewFolder, $author$project$PhotoFolders$End, model.root)
+					])),
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('selected-photo')
+					]),
+				_List_fromArray(
+					[selectedPhoto]))
+			]));
+};
 var $elm$html$Html$footer = _VirtualDom_node('footer');
 var $author$project$Main$viewFooter = A2(
 	$elm$html$Html$footer,
@@ -7683,6 +8001,7 @@ var $author$project$Main$viewFooter = A2(
 			$elm$html$Html$text('One is never alone with a rubber duck. - Douglas Adams')
 		]));
 var $elm$html$Html$a = _VirtualDom_node('a');
+var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $elm$html$Html$Attributes$href = function (url) {
 	return A2(
 		$elm$html$Html$Attributes$stringProperty,
@@ -7777,7 +8096,25 @@ var $author$project$Main$viewHeader = function (page) {
 			[logo, links]));
 };
 var $author$project$Main$view = function (model) {
-	var content = $elm$html$Html$text('This isn\'t even my final form!');
+	var content = function () {
+		var _v0 = model.page;
+		switch (_v0.$) {
+			case 'FoldersPage':
+				var folders = _v0.a;
+				return A2(
+					$elm$html$Html$map,
+					$author$project$Main$GotFoldersMsg,
+					$author$project$PhotoFolders$view(folders));
+			case 'GalleryPage':
+				var gallery = _v0.a;
+				return A2(
+					$elm$html$Html$map,
+					$author$project$Main$GotGalleryMsg,
+					$author$project$PhotoGallery$view(gallery));
+			default:
+				return $elm$html$Html$text('not found');
+		}
+	}();
 	return {
 		body: _List_fromArray(
 			[

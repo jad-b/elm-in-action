@@ -100,9 +100,7 @@ view model =
     in
     div [ class "content" ]
         [ div [ class "folders" ]
-            [ h1 [] [ text "Folders" ]
-            , viewFolder End model.root
-            ]
+            [ viewFolder End model.root ]
         , div [ class "selected-photo" ] [ selectedPhoto ]
         ]
 
