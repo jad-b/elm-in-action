@@ -7731,7 +7731,11 @@ var $author$project$PhotoFolders$update = F2(
 			default:
 				if (msg.a.$ === 'Ok') {
 					var newModel = msg.a.a;
-					return _Utils_Tuple2(newModel, $elm$core$Platform$Cmd$none);
+					return _Utils_Tuple2(
+						_Utils_update(
+							newModel,
+							{selectedPhotoUrl: model.selectedPhotoUrl}),
+						$elm$core$Platform$Cmd$none);
 				} else {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				}
@@ -7821,11 +7825,19 @@ var $author$project$PhotoFolders$appendIndex = F2(
 var $author$project$PhotoFolders$ClickedPhoto = function (a) {
 	return {$: 'ClickedPhoto', a: a};
 };
+var $elm$html$Html$a = _VirtualDom_node('a');
+var $elm$html$Html$Attributes$href = function (url) {
+	return A2(
+		$elm$html$Html$Attributes$stringProperty,
+		'href',
+		_VirtualDom_noJavaScriptUri(url));
+};
 var $author$project$PhotoFolders$viewPhoto = function (url) {
 	return A2(
-		$elm$html$Html$div,
+		$elm$html$Html$a,
 		_List_fromArray(
 			[
+				$elm$html$Html$Attributes$href('/photos/' + url),
 				$elm$html$Html$Attributes$class('photo'),
 				$elm$html$Html$Events$onClick(
 				$author$project$PhotoFolders$ClickedPhoto(url))
@@ -8000,14 +8012,7 @@ var $author$project$Main$viewFooter = A2(
 		[
 			$elm$html$Html$text('One is never alone with a rubber duck. - Douglas Adams')
 		]));
-var $elm$html$Html$a = _VirtualDom_node('a');
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
-var $elm$html$Html$Attributes$href = function (url) {
-	return A2(
-		$elm$html$Html$Attributes$stringProperty,
-		'href',
-		_VirtualDom_noJavaScriptUri(url));
-};
 var $author$project$Main$isActive = function (_v0) {
 	var link = _v0.link;
 	var page = _v0.page;
